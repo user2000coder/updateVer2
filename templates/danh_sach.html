@@ -104,54 +104,80 @@
 </nav>
 <div class="container">
     <div class="content-box">
-        <h1>Danh sách sản phẩm đã nhập kho</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Mã QR</th>
-                    <th>Tên sản phẩm</th>
-                    <th>Vị trí</th>
-                    <th>Số lượng</th>
-                    <th>QR Code</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in products %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ p.qr_code }}</td>
-                    <td>{{ p.product_name }}</td>
-                    <td>{{ p.location }}</td>
-                    <td>{{ p.quantity }}</td>
-                    <td>
-                        <a class="qr-link" href="/static/qr_codes/{{ p.qr_code }}.png" target="_blank">Xem QR</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <h1 style="margin-top:40px;">Danh sách xuất kho</h1>
+        <h1>Lịch sử nhập kho</h1>
         <table>
             <thead>
                 <tr>
                     <th>STT</th>
                     <th>Thời gian</th>
-                    <th>Mã QR</th>
-                    <th>Tên sản phẩm</th>
+                    <th>Mã hàng</th>
+                    <th>Tên vật tư</th>
+                    <th>Phân loại BU</th>
+                    <th>Quy cách</th>
+                    <th>Hãng</th>
+                    <th>Vị trí</th>
+                    <th>Số lượng nhập</th>
+                    <th>Người nhập kho</th>
+                    <th>QR Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in nhap_kho %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ h.created_at or h.transaction_date }}</td>
+                    <td>{{ h.part_code }}</td>
+                    <td>{{ h.material_name }}</td>
+                    <td>{{ h.classification }}</td>
+                    <td>{{ h.specification }}</td>
+                    <td>{{ h.brand_name }}</td>
+                    <td>{{ h.location }}</td>
+                    <td>{{ h.quantity }}</td>
+                    <td>{{ h.imported_by }}</td>
+                    <td>
+                        {% if h.part_code %}
+                        <a class="qr-link" href="/static/qr_codes/{{ h.part_code }}.png" target="_blank">Xem QR</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h1 style="margin-top:40px;">Lịch sử xuất kho</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Thời gian</th>
+                    <th>Mã hàng</th>
+                    <th>Tên vật tư</th>
+                    <th>Phân loại BU</th>
+                    <th>Quy cách</th>
+                    <th>Hãng</th>
                     <th>Vị trí</th>
                     <th>Số lượng xuất</th>
+                    <th>Người xuất kho</th>
+                    <th>QR Code</th>
                 </tr>
             </thead>
             <tbody>
                 {% for x in xuat_kho %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td>{{ x.timestamp }}</td>
-                    <td>{{ x.qr_code }}</td>
-                    <td>{{ x.product_name }}</td>
+                    <td>{{ x.created_at or x.transaction_date }}</td>
+                    <td>{{ x.part_code }}</td>
+                    <td>{{ x.material_name }}</td>
+                    <td>{{ x.classification }}</td>
+                    <td>{{ x.specification }}</td>
+                    <td>{{ x.brand_name }}</td>
                     <td>{{ x.location }}</td>
                     <td>{{ x.quantity }}</td>
+                    <td>{{ x.exported_by }}</td>
+                    <td>
+                        {% if x.part_code %}
+                        <a class="qr-link" href="/static/qr_codes/{{ x.part_code }}.png" target="_blank">Xem QR</a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

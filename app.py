@@ -166,15 +166,22 @@ def bao_cao_xls():
 @app.route('/danh-sach')
 def danh_sach():
     conn = get_db_connection()
-    products = conn.execute('SELECT * FROM MATERIAL').fetchall()
+    nhap_kho = conn.execute("""
+        SELECT st.*, m.classification, m.part_code, m.material_name, m.specification, m.brand_name, m.location, m.imported_by
+        FROM STOCK_TRANSACTION st
+        JOIN MATERIAL m ON st.material_id = m.material_id
+        WHERE st.transaction_type = 'input'
+        ORDER BY st.created_at DESC
+    """).fetchall()
     xuat_kho = conn.execute("""
-        SELECT st.*, m.material_name, m.part_code FROM STOCK_TRANSACTION st
+        SELECT st.*, m.classification, m.part_code, m.material_name, m.specification, m.brand_name, m.location
+        FROM STOCK_TRANSACTION st
         JOIN MATERIAL m ON st.material_id = m.material_id
         WHERE st.transaction_type = 'output'
         ORDER BY st.created_at DESC
     """).fetchall()
     conn.close()
-    return render_template('danh_sach.html', products=products, xuat_kho=xuat_kho)
+    return render_template('danh_sach.html', nhap_kho=nhap_kho, xuat_kho=xuat_kho)
 
 @app.route('/xuat-kho-submit', methods=['POST'])
 def xuat_kho_submit():
@@ -214,6 +221,7 @@ def xuat_kho_batch():
     for item in items:
         qr_code = item.get('qr_code')
         quantity = int(item.get('quantity', 0))
+        exported_by = item.get('exported_by', '')
         material = conn.execute('SELECT * FROM MATERIAL WHERE part_code=?', (qr_code,)).fetchone()
         if not material:
             conn.close()
@@ -224,8 +232,8 @@ def xuat_kho_batch():
             return jsonify({'status': 'error', 'message': f'Tồn kho không đủ cho mã QR: {qr_code}'})
         new_qty = current_qty - quantity
         conn.execute('UPDATE MATERIAL SET quantity=?, updated_at=? WHERE material_id=?', (new_qty, datetime.now(), material['material_id']))
-        conn.execute('''INSERT INTO STOCK_TRANSACTION (material_id, transaction_type, quantity, transaction_date, reference_number, notes, created_at) VALUES (?, 'output', ?, ?, '', '', ?)''',
-            (material['material_id'], quantity, datetime.now().date(), datetime.now()))
+        conn.execute('''INSERT INTO STOCK_TRANSACTION (material_id, transaction_type, quantity, transaction_date, reference_number, notes, created_at, exported_by) VALUES (?, 'output', ?, ?, '', '', ?, ?)''',
+            (material['material_id'], quantity, datetime.now().date(), datetime.now(), exported_by))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -330,8 +338,8 @@ def create_product():
         new_qty = int(material['quantity']) + quantity
         # Cập nhật cả imported_by khi nhập kho
         conn.execute('UPDATE MATERIAL SET quantity=?, updated_at=?, imported_by=? WHERE material_id=?', (new_qty, now, imported_by, material['material_id']))
-        conn.execute('''INSERT INTO STOCK_TRANSACTION (material_id, transaction_type, quantity, transaction_date, reference_number, notes, created_at) VALUES (?, 'input', ?, ?, '', '', ?)''',
-            (material['material_id'], quantity, now.date(), now))
+        conn.execute('''INSERT INTO STOCK_TRANSACTION (material_id, transaction_type, quantity, transaction_date, reference_number, notes, created_at, imported_by) VALUES (?, 'input', ?, ?, '', '', ?, ?)''',
+            (material['material_id'], quantity, now.date(), now, imported_by))
         conn.commit()
         # Luôn tạo file QR code nếu chưa có
         if not os.path.exists(qr_img_path):
@@ -351,8 +359,8 @@ def create_product():
     material = conn.execute('SELECT material_id FROM MATERIAL WHERE part_code=? AND material_name=? AND created_at=?', (part_code, material_name, now)).fetchone()
     material_id = material['material_id'] if material else None
     if material_id:
-        conn.execute('''INSERT INTO STOCK_TRANSACTION (material_id, transaction_type, quantity, transaction_date, reference_number, notes, created_at) VALUES (?, 'input', ?, ?, '', '', ?)''',
-            (material_id, quantity, now.date(), now))
+        conn.execute('''INSERT INTO STOCK_TRANSACTION (material_id, transaction_type, quantity, transaction_date, reference_number, notes, created_at, imported_by) VALUES (?, 'input', ?, ?, '', '', ?, ?)''',
+            (material_id, quantity, now.date(), now, imported_by))
     conn.commit()
     # Luôn tạo file QR code cho vật tư mới
     if not os.path.exists(qr_img_path):

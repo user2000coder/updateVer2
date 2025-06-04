@@ -110,6 +110,8 @@
         <div id="product-info" style="margin:8px 0 0 0;color:#1976d2;font-weight:500;"></div>
         <label>Số lượng xuất:</label>
         <input type="number" id="quantity" name="quantity" min="1" required>
+        <label>Người xuất kho:</label>
+        <input type="text" id="exported_by" name="exported_by" required placeholder="Nhập tên người xuất kho">
         <button type="button" onclick="addToList()">Thêm vào danh sách</button>
     </form>
     <div class="table-wrap">
@@ -117,7 +119,7 @@
             <thead>
                 <tr style="background:#e3f0ff;color:#1976d2;">
                     <th style="padding:6px 8px;">STT</th>
-                    <th style="padding:6px 8px;">Mã QR</th>
+                    <th style="padding:6px 8px;">Mã hàng</th>
                     <th style="padding:6px 8px;">Tên vật tư</th>
                     <th style="padding:6px 8px;">Phân loại</th>
                     <th style="padding:6px 8px;">Số lượng xuất</th>
@@ -153,8 +155,8 @@
         const classify = this.options[this.selectedIndex].getAttribute('data-classify');
         document.getElementById('qr-code').value = partCode;
         if (partCode) {
-            document.getElementById('product-info').innerText = `Tên vật tư: ${name} | Phân loại: ${classify}`;
-            productCache[partCode] = { material_name: name, classify: classify };
+            document.getElementById('product-info').innerText = `Tên vật tư: ${name} | Mã hàng: ${partCode} | Phân loại BU: ${classify}`;
+            productCache[partCode] = { material_name: name, part_code: partCode, classify: classify };
         } else {
             document.getElementById('product-info').innerText = '';
         }
@@ -180,17 +182,26 @@
             });
     }
     function showProductInfo(product) {
-        document.getElementById('product-info').innerText = `Tên vật tư: ${product.material_name} | Phân loại: ${product.classify}`;
+        document.getElementById('product-info').innerText =
+            `Tên vật tư: ${product.material_name} | Hãng: ${product.brand_name || product.brand} | Quy cách: ${product.specification} | Mã hàng: ${product.part_code} | Phân loại BU: ${product.classify || product.classification || ''}`;
     }
     function addToList() {
         const qr_code = document.getElementById('qr-code').value;
         const quantity = document.getElementById('quantity').value;
+        const exported_by = document.getElementById('exported_by').value;
         const product = productCache[qr_code];
-        if (!qr_code || !quantity || !product) {
-            alert('Vui lòng quét mã QR, kiểm tra thông tin và nhập số lượng!');
+        if (!qr_code || !quantity || !product || !exported_by) {
+            alert('Vui lòng quét mã QR, kiểm tra thông tin, nhập số lượng và người xuất kho!');
             return;
         }
-        exportList.push({ qr_code, quantity, material_name: product.material_name, classify: product.classify });
+        exportList.push({ 
+            qr_code, 
+            part_code: product.part_code || qr_code, 
+            material_name: product.material_name, 
+            classify: product.classify || product.classification || '',
+            quantity,
+            exported_by
+        });
         renderExportList();
         document.getElementById('add-form').reset();
         document.getElementById('qr-code').value = '';
@@ -200,7 +211,7 @@
         const tbody = document.getElementById('export-list-body');
         tbody.innerHTML = '';
         exportList.forEach((item, idx) => {
-            tbody.innerHTML += `<tr><td>${idx+1}</td><td>${item.qr_code}</td><td>${item.material_name}</td><td>${item.classify}</td><td>${item.quantity}</td><td><a href='/static/qr_codes/${item.qr_code}.png' target='_blank'>QR code</a></td><td><button class='remove-btn' onclick='removeFromList(${idx})'>Xóa</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${idx+1}</td><td>${item.part_code}</td><td>${item.material_name}</td><td>${item.classify}</td><td>${item.quantity}</td><td><a href='/static/qr_codes/${item.qr_code}.png' target='_blank'>QR code</a></td><td><button class='remove-btn' onclick='removeFromList(${idx})'>Xóa</button></td></tr>`;
         });
         document.getElementById('export-list-table').style.display = exportList.length ? '' : 'none';
         document.getElementById('export-btn').style.display = exportList.length ? '' : 'none';

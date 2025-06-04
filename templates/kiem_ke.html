@@ -109,6 +109,10 @@
             .then(data => {
                 if (data.status === 'success') {
                     productCache[qr_code] = data.product;
+                    // Hiển thị thông tin vật tư khi quét mã QR
+                    const product = data.product;
+                    document.getElementById('result').innerHTML =
+                        `Tên vật tư: ${product.material_name} | Hãng: ${product.brand_name || product.brand} | Quy cách: ${product.specification} | Mã hàng: ${product.part_code} | Phân loại BU: ${product.classify || product.classification || ''}`;
                 }
             });
     }

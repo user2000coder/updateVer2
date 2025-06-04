@@ -339,7 +339,7 @@
                     <td class="brand">{{ h['brand_name'] }}</td>
                     <td class="unit">{{ h['unit'] }}</td>
                     <td class="location">{{ h['location'] }}</td>
-                    <td>{{ h['imported_by'] }}</td>
+                    <td>{{ h['imported_by'] or h['imported_by'] }}</td>
                     <td class="qty">{{ h['quantity'] }}</td>
                     <td class="date">{{ h['created_at'] or h['transaction_date'] }}</td>
                     <td class="qr">
